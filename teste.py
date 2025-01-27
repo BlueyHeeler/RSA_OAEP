@@ -1,8 +1,9 @@
-from .funcoes import *
 import hashlib
 import random
 from math import gcd
 import base64
+
+
 
 def decompondo(n):
     """Decompõe n-1 como 2^k * m, onde m é ímpar."""
@@ -46,18 +47,21 @@ def mgf1(seed: int, length: int, hash_func=hashlib.sha1) -> bytes:
 
     if length > (hash_func().digest_size * (2**32)):
         raise ValueError("mask too long")
-
+    
+    # Convert length from bits to bytes (ceiling division)
     byte_length = (length + 7) // 8
+    
+    # Convert seed to fixed-length bytes
     seed_bytes = seed.to_bytes((seed.bit_length() + 7) // 8, byteorder='big')
-
+    
     T = b""
     counter = 0
-
+    
     while len(T) < byte_length:
         C = counter.to_bytes(4, byteorder='big')
         T += hash_func(seed_bytes + C).digest()
         counter += 1
-
+    
     return T[:byte_length]
 
 def shift_left(shift_values, n):
@@ -89,6 +93,7 @@ def DB(pHash, mensagem):
     pHash = pHash | shift_left(number_of_bits(mensagem), 1)
     return (pHash | mensagem)
 
+""" Descobrindo os números primos """
 def prime_numbers():
     n = 1 << 1024
     contador = 0
@@ -101,6 +106,45 @@ def prime_numbers():
             break
         n += 1
     return par_de_numeros_primos
+
+""""
+Descobrindo o pHash e a seed 
+
+
+seed = random.getrandbits(256).to_bytes(32, byteorder="big")
+seed = int.from_bytes(seed, byteorder='big')
+
+pHash = hashlib.sha3_256(seed.to_bytes(32, byteorder='big')).digest()
+pHash = int.from_bytes(pHash, byteorder='big')
+mensagem = 101
+
+print("DB:", bin(DB(pHash, mensagem)))
+print("Number of bits: ", number_of_bits(DB(pHash, mensagem)))
+
+maskeDB = DB(pHash, mensagem) ^ int.from_bytes(mgf1(seed, 1792, hashlib.sha3_256))
+
+maskedSeed = seed ^ int.from_bytes(mgf1(maskeDB, 32, hashlib.sha3_256))
+
+maskedSeed = shift_left(1792, maskedSeed)
+
+EM = maskedSeed | maskeDB
+
+#================================================================================================#
+bit_mask = pow(2, 257) - 1
+bit_mask = shift_left(1792, bit_mask)
+maskedSeed = EM & bit_mask
+maskedSeed = shift_right(1792, maskedSeed)
+
+bit_mask = pow(2, 1793) - 1
+maskeDB = EM & bit_mask
+
+seed = maskedSeed ^ int.from_bytes(mgf1(maskeDB, 32, hashlib.sha3_256), byteorder='big')
+db = maskeDB ^ int.from_bytes(mgf1(seed, 1792, hashlib.sha3_256), byteorder='big')
+
+print("DB: ", bin(db))
+print("Number of bits: ", number_of_bits(db))
+
+"""
 
 def enc_oaep(mensagem):
     seed = random.getrandbits(256).to_bytes(32, byteorder="big")
@@ -136,6 +180,8 @@ def dec_oaep(c):
     most_significant_bit = shift_left(most_significant_bit, 1)
     m = m ^ most_significant_bit
     return m
+    
+#print(dec_oaep(enc_oaep(15)))
 
 def multiplicative_inverse(a, b):
     if b > a:
@@ -146,7 +192,7 @@ def multiplicative_inverse(a, b):
 
     if b > a:
         a, b = b, a
-    q = a // b
+    q = a // b  # Use divisão inteira
     r = a % b
     t1 = 0
     t2 = 1
@@ -158,10 +204,25 @@ def multiplicative_inverse(a, b):
             if t1 < 0:
                 t1 += old_a
             return t1
-        q = a // b
+        q = a // b  # Use divisão inteira
         r = a % b
         t1, t2 = t2, t
         t = t1 - t2 * q
+
+
+lista = prime_numbers()
+p = lista[0]
+q = lista[1]
+print("p:", p)
+print("q:", q)
+n = p * q
+e = 65537
+m = "Bluey Heeler"
+print("Texto original:", m)
+m = m.encode('utf-8')  # Converter para bytes
+m = base64.b64encode(m)  # Codificar para Base64
+m = int.from_bytes(m, byteorder='big')
+m = enc_oaep(m)
 
 def enc_rsa(n, e, m):
     c = pow(m, e, n)
@@ -173,3 +234,16 @@ def dec_rsa(p, q, e, c):
     d = multiplicative_inverse(phi, e)
     m = pow(c, d, n)
     return m
+
+count = 0
+
+c = enc_rsa(n, e, m)[0].to_bytes((enc_rsa(n, e, m)[0].bit_length() + 7) // 8, byteorder='big')
+c = base64.b64encode(c)
+print("Texto codificado:", c)
+
+m = dec_oaep(dec_rsa(p, q, e, enc_rsa(n, e, m)[0]))
+m = m.to_bytes((m.bit_length() + 7) // 8, byteorder='big')  # Converter para bytes
+m = base64.b64decode(m).decode('utf-8')  # Decodificar para texto
+
+print("Texto decodificado:", m)
+
