@@ -306,7 +306,7 @@ def base64_decode(mensagem_encriptada):
     """
     Base64 Decode
     Args:
-        mensagem_encriptada: mensagem encriptada
+        mensagem_encriptada: int mensagem encriptada
     Returns:
         str: mensagem decodificada
     """
@@ -345,21 +345,30 @@ def dec_rsa(p, q, e, c):
     m = pow(c, d, n)
     return m
 
-"""
-phi = (p - 1) * (q - 1)
-d = multiplicative_inverse(phi, e)
-m = 15
-c = pow(m, d, n) # m ^ d mod n
-m = pow(c, e, n) # c ^ e mod n
-print(m)
+def assinatura_com_rsa(message, key, n):
+    message = base64_encode(message)
+    message = int.from_bytes(message, byteorder='big')
+    hash_message = hashlib.sha3_256(message.to_bytes(32, byteorder='big')).digest()
+    hash_message = int.from_bytes(hash_message, byteorder='big')
+    enc_hash = enc_rsa(n, key, hash_message)[0]
+    return message, enc_hash
+
+def verificar_assinatura_com_rsa(message, enc_hash, e, n):
+    dec_hash = enc_rsa(n, e, enc_hash)
+    hash_message = hashlib.sha3_256(message.to_bytes(32, byteorder='big')).digest()
+    hash_message = int.from_bytes(hash_message, byteorder='big')
+    return dec_hash[0] == hash_message
+
+"""========================================================================================================"""
+
 lista = prime_numbers()
 p = lista[0]
 q = lista[1]
 n = p * q
+phi = (p - 1) * (q - 1)
 e = 65537
-"""
-"""
 message = "Bluey Heeler"
+
 print("Texto original:", message)
 print("================================================================================")
 message = base64_encode(message)
@@ -379,16 +388,8 @@ print("Message descriptografada com OAEP:", dec_message)
 print("================================================================================")
 dec_message = base64_decode(dec_message)
 print("Message descriptografada com BASE64:", dec_message)
-"""
 
+d = multiplicative_inverse(e, phi)
 message = "Bluey Heeler"
-message = base64_encode(message)
-print(message)
-message = int.from_bytes()
-def assinatura(message, key):
-    hash_message = int.from_bytes(hashlib.sha3_256(message.encode('utf-8')).digest(), byteorder='big')
-    hash_message = enc_rsa(n, e, hash_message)
-    
-    return hash_message
-
-print(assinatura("Bluey Heeler", e))
+c = (assinatura_com_rsa(message, d, n))
+verificar_assinatura_com_rsa(c[0], c[1], e, n)
