@@ -179,8 +179,6 @@ def dec_oaep(c):
     m = m ^ most_significant_bit
     return m
     
-#print(dec_oaep(enc_oaep(15)))
-
 def multiplicative_inverse(a, b):
     if b > a:
         a, b = b, a

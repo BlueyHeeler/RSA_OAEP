@@ -134,7 +134,8 @@ def DB(pHash, mensagem): #faz a concatenação de pHash e mensagem
         int: DB com padding
     """
     pHash = shift_left(1536 , pHash)
-    pHash = pHash | shift_left(number_of_bits(mensagem), 1)
+    padding = shift_left(number_of_bits(mensagem), 1)
+    pHash = pHash | padding
     return (pHash | mensagem)
 
 def prime_numbers(): #descobre os números primos usando a função de Miller-Rabin
@@ -222,8 +223,8 @@ def dec_oaep(c): #decriptação OAEP
         int: m
     """
     bitMask = shift_left(1792, 1) - 1                                                           # máscara de bits
-    maskedDB = c & bitMask                                                                      # máscara de DB
-    maskedSeed = c >> 1792                                                                      # mascara da seed
+    maskedDB = c & bitMask
+    maskedSeed = shift_right(1792, c)                                                                      # máscara de DB
     seed = maskedSeed ^ int.from_bytes(mgf1(maskedDB, 32, hashlib.sha3_256), byteorder='big')   #
     db = maskedDB ^ int.from_bytes(mgf1(seed, 1792, hashlib.sha3_256), byteorder='big')         #      
     bitMask = shift_left(1536, 1) - 1                                                           #
