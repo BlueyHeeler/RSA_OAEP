@@ -19,7 +19,7 @@ def decompondo(n):
         e += 1
     return e, m
 
-def miller_rabin(n, rodadas=5):
+def miller_rabin(n, rodadas=10):
     """
     Miller-Rabin primality test
     Args:
@@ -34,24 +34,27 @@ def miller_rabin(n, rodadas=5):
         return True
     if n % 2 == 0:
         return False
+    
     expo_k, m = decompondo(n)  #exponte K e m tal que n - 1 = 2^k * m
-    for i in range(rodadas):
+    for _ in range(rodadas):
         a = random.randrange(2, n - 2) # pega um numero aleatorio entre 2 e n-2
         """ x = a^m mod n """
         x = pow(a, m, n) 
-        eh_primo = False
         if x == 1 or x == n-1: # se x for 1 ou n-1, então n é primo
-            eh_primo = True
+            continue
         else:
-            for i in range(expo_k - 1): # para i de 0 até k-1
+            teste = False
+            for _ in range(expo_k - 1): # para i de 0 até k-1
                 """ x = x^2 mod n """ 
                 x = pow(x, 2, n)
                 if x == n-1:
-                    eh_primo = True
+                    teste = True
                     break
-        if eh_primo:
-            return True
-    return False
+            if(teste):
+                continue
+            else:
+                return False
+    return True
 
 def mgf1(seed: int, length: int, hash_func=hashlib.sha1) -> bytes: #máscara de geração de função
     if length > (hash_func().digest_size * (2**32)): #tamanho da máscara 
@@ -202,13 +205,13 @@ def enc_oaep(mensagem): #encriptação OAEP
     """
     seed = random.getrandbits(256).to_bytes(32, byteorder="big")                                # gera uma seed aleatória
     seed = int.from_bytes(seed, byteorder='big')                                                # converte a seed para int
-    pHash = hashlib.sha3_256(seed.to_bytes(32, byteorder='big')).digest()                       # hash da seed
+    pHash = hashlib.sha3_256().digest()                                                         # hash de NULL
     pHash = int.from_bytes(pHash, byteorder='big')                                              # converte o hash da seed para int
-    mascaraDB = DB(pHash, mensagem) ^ int.from_bytes(mgf1(seed, 1792, hashlib.sha3_256))        # faz a concatenação de pHash e mensagem
-    mascaraSeed = seed ^ int.from_bytes(mgf1(mascaraDB, 32, hashlib.sha3_256))                  # faz a máscara da seed
-    mascaraSeed = shift_left(1792, mascaraSeed)                                                 # desloca a seed para a esquerda em 1792 bits
-    concat = mascaraSeed | mascaraDB                                                            # concatena a máscara da seed e a máscara da mensagem
-    return concat
+    maskedDB = DB(pHash, mensagem) ^ int.from_bytes(mgf1(seed, 1792, hashlib.sha3_256))         # faz a concatenação de pHash e mensagem
+    maskedSeed = seed ^ int.from_bytes(mgf1(maskedDB, 32, hashlib.sha3_256))                    # faz a máscara da seed
+    maskedSeed = shift_left(1792, maskedSeed)                                                   # desloca a seed para a esquerda em 1792 bits
+    EM = maskedSeed | maskedDB                                                                  # concatena a máscara da seed e a máscara da mensagem
+    return EM
 
 def dec_oaep(c): #decriptação OAEP
     """
@@ -218,17 +221,17 @@ def dec_oaep(c): #decriptação OAEP
     Returns:
         int: m
     """
-    mascaraBits = (1 << 1792) - 1                                                                           # máscara de bits
-    mascaraDB = c & mascaraBits                                                                             # máscara de DB
-    mascaraSeed = c >> 1792                                                                                 # mascara da seed
-    seed = mascaraSeed ^ int.from_bytes(mgf1(mascaraDB, 32, hashlib.sha3_256), byteorder='big')
-    db = mascaraDB ^ int.from_bytes(mgf1(seed, 1792, hashlib.sha3_256), byteorder='big')                
-    mascaraBits = (1 << 1536) - 1
-    m = db & mascaraBits
-    MSBit = msb(m) - 1
-    MSBit = shift_left(MSBit, 1)
-    m = m ^ MSBit
-    return m
+    bitMask = shift_left(1792, 1) - 1                                                           # máscara de bits
+    maskedDB = c & bitMask                                                                      # máscara de DB
+    maskedSeed = c >> 1792                                                                      # mascara da seed
+    seed = maskedSeed ^ int.from_bytes(mgf1(maskedDB, 32, hashlib.sha3_256), byteorder='big')   #
+    db = maskedDB ^ int.from_bytes(mgf1(seed, 1792, hashlib.sha3_256), byteorder='big')         #      
+    bitMask = shift_left(1536, 1) - 1                                                           #
+    m = db & bitMask                                                                            #
+    MSBit = msb(m) - 1                                                                          #
+    MSBit = shift_left(MSBit, 1)                                                                #
+    m = m ^ MSBit                                                                               #
+    return m                                                                                    #
     
 def multiplicative_inverse(a, b): # calcula o inverso multiplicativo usando o Algoritmo extendido de Euclides
     """

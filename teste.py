@@ -3,8 +3,6 @@ import random
 from math import gcd
 import base64
 
-
-
 def decompondo(n):
     """Decompõe n-1 como 2^k * m, onde m é ímpar."""
     k = 0
@@ -14,7 +12,7 @@ def decompondo(n):
         k += 1
     return k, m
 
-def miller_rabin(n, k=10):
+def miller_rabin(n, k=25):
     """Teste de primalidade de Miller-Rabin com k iterações."""
     if n <= 1:
         return False
@@ -210,40 +208,9 @@ def multiplicative_inverse(a, b):
         t = t1 - t2 * q
 
 
-lista = prime_numbers()
-p = lista[0]
-q = lista[1]
-print("p:", p)
-print("q:", q)
-n = p * q
-e = 65537
-m = "Bluey Heeler"
-print("Texto original:", m)
-m = m.encode('utf-8')  # Converter para bytes
-m = base64.b64encode(m)  # Codificar para Base64
-m = int.from_bytes(m, byteorder='big')
-m = enc_oaep(m)
-
-def enc_rsa(n, e, m):
-    c = pow(m, e, n)
-    return c, n
-
-def dec_rsa(p, q, e, c):
-    n = p * q
-    phi = (p - 1) * (q - 1)
-    d = multiplicative_inverse(phi, e)
-    m = pow(c, d, n)
-    return m
-
 count = 0
-
-c = enc_rsa(n, e, m)[0].to_bytes((enc_rsa(n, e, m)[0].bit_length() + 7) // 8, byteorder='big')
-c = base64.b64encode(c)
-print("Texto codificado:", c)
-
-m = dec_oaep(dec_rsa(p, q, e, enc_rsa(n, e, m)[0]))
-m = m.to_bytes((m.bit_length() + 7) // 8, byteorder='big')  # Converter para bytes
-m = base64.b64decode(m).decode('utf-8')  # Decodificar para texto
-
-print("Texto decodificado:", m)
+for i in range(2, 7920):
+    if(miller_rabin(i)):
+        count += 1
+print(count)
 
