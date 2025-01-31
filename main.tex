@@ -1,63 +1,522 @@
 \documentclass{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{listings}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.8,0,0.2}
+\definecolor{backcolour}{rgb}{.95,.95,1}
 
-\title{Trabalho de Implementação 3 - Seminário \\
-        Segurança Computacional}
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    inputencoding=utf8,
+    extendedchars=true,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2,
+    morecomment=[l]{//},
+    morecomment=[s]{/*}{*/},
+    morecomment=[s]{"""}{"""}
+}
 
-\author{Davi Bueno e Erick Taira}
-\date{28 de Janeiro de 2025}
+
+\title{Explicacão do Código Python para Criptografia RSA com OAEP e Base64}
+\author{Davi de Araújo Garcez Bueno - 211060586 \\ Erick Hideki Taira - 222011525}
+\date{Janeiro 2025}
 
 \begin{document}
 
 \maketitle
 
-\section*{Como a inteligência artificial é utilizada para a educação em computação?}
-
 \section{Introdução}
-No mundo de hoje, dominado pela tecnologia, a computação se tornou uma habilidade crucial para o sucesso, tanto na vida pessoal quanto profissional. A educação em computação, responsável por equipar as novas gerações com as ferramentas e conhecimentos para navegar nesse universo digital, enfrenta o desafio de acompanhar o ritmo acelerado das inovações. É nesse cenário que a inteligência artificial (IA) surge como uma aliada para aprimorar e transformar os processos de ensino e aprendizagem. Este estudo propõe explorar as diversas maneiras pelas quais essa tecnologia está sendo utilizada para melhorar o ensino na área de computação. Através de uma análise abrangente da literatura existente, buscamos identificar as tendências, os desafios e as oportunidades que a IA apresenta para o futuro da educação em computação.
+O código apresentado implementa um sistema de criptografia baseado no algoritmo RSA, combinando técnicas como OAEP (Optimal Asymmetric Encryption Padding), codificacão Base64 e teste de primalidade de Miller-Rabin. Além disso, ele realiza assinatura digital utilizando RSA e verifica a autenticidade da assinatura.
 
-\section{Objetivo do estudo}
-Esperamos que este estudo contribua para uma melhor compreensão das diversas aplicações da IA na educação em computação, fornecendo insights valiosos para educadores, pesquisadores e formuladores de políticas. Este trabalho busca contribuir para o desenvolvimento de estratégias eficazes para integrar essa tecnologia na educação em computação.
+\section{Explicação das Funções}
 
-\section{Artigo escolhido:}
+\subsection{Função \texttt{decompondo}}
+Esta funcão decompõe um número  na forma , onde  é impar.
 
-The Use of Artificial Intelligence (AI) in Online Learning and Distance Education Processes: A Systematic Review of Empirical Studies
+\begin{lstlisting}[language=Python]
+def decompondo(n):
+    # Decompoe n-1 como 2 elevado a e vezes m, onde n e impar.
+    # Args:
+    #    n: numero para decompor
+    # Returns:
+    #    int: expoente
+    #    int: numero
+        e = 0
+        m = n - 1
+        while m % 2 == 0:
+            m //= 2        
+            e += 1
+        return e, m
+\end{lstlisting}
 
-Segundo os critérios de avaliação, o artigo “The Use of Artificial Intelligence (AI) in Online Learning and Distance Education Processes: A Systematic Review of Empirical Studies” é classificado como:
+\subsection{Função \texttt{miller\textunderscore rabin}}
+Implementa o teste de primalidade de Miller-Rabin, retornando verdadeiro se o número for provavelmente primo e falso caso contrário.
+
+\begin{lstlisting}[language=Python]
+    def miller_rabin(n, rodadas=10):
+    """
+    Miller-Rabin primality test
+    Args:
+        n: numero para ser testado
+        rodadas: quantidade de rodadas a serem feitas
+    Returns:
+        bool: True se e primo, False se nao e primo
+    """
+        if n <= 1 or n == 4:
+            return False
+        if n <= 3:
+            return True
+        if n % 2 == 0:
+            return False
+        
+        expo_k, m = decompondo(n)  #exponte K e m tal que n - 1 = 2^k * m
+        for _ in range(rodadas):
+            a = random.randrange(2, n - 2) # pega um numero aleatorio entre 2 e n-2
+            """ x = a^m mod n """
+            x = pow(a, m, n) 
+            if x == 1 or x == n-1: # se x for 1 ou n-1, entao n e primo
+                continue
+            else:
+                teste = False
+                for _ in range(expo_k - 1): # para i de 0 ate k-1
+                    """ x = x^2 mod n """ 
+                    x = pow(x, 2, n)
+                    if x == n-1:
+                        teste = True
+                        break
+                if(teste):
+                    continue
+                else:
+                    return False
+        return True
+    \end{lstlisting}
+
+\subsection{Função \texttt{mgf1}}
+Mascara uma entrada utilizando uma funcão de hash para gerar uma saida pseudoaleatória de comprimento especificado.
+
+\begin{lstlisting}[language=Python]
+    def mgf1(seed: int, length: int, hash_func=hashlib.sha1) -> bytes: #mascara de geracao de funcao
+        if length > (hash_func().digest_size * (2**32)): #tamanho da mascara 
+            raise ValueError("mask too long")
+        # Converte o tamanho de bits para bytes
+        byte_length = (length + 7) // 8
+        # Converte a seed para um tamanho fixo de bytes
+        seed_bytes = seed.to_bytes((seed.bit_length() + 7) // 8, byteorder='big')
+        T = b""
+        counter = 0
+        while len(T) < byte_length: # enquanto o tamanho de T for menor que o tamanho de bytes
+            C = counter.to_bytes(4, byteorder='big')
+            T += hash_func(seed_bytes + C).digest()
+            counter += 1
+        return T[:byte_length]
+    \end{lstlisting}
+
+\subsection{Funções \texttt{shift\textunderscore left} e \texttt{shift\textunderscore right}}
+Realizam deslocamento de bits para a esquerda e direita, respectivamente.
+
+\begin{lstlisting}[language=Python]
+    def shift_left(shift_values, n): #deslocamento para a esquerda
+    """
+    Shift Left
+    Args:
+        shift_values: quantidade de shift
+        n: numero para ser shiftado
+    Returns:
+        int: numero shiftado
+    """
+        return n << shift_values
+
+    def shift_right(shift_values, n): #deslocamento para a direita
+    """
+    Shift Right
+    Args:
+        shift_values: quantidade de shift
+        n: numero para ser shiftado
+    Returns:
+        int: numero shiftado
+    """
+        return n >> shift_values
+    \end{lstlisting}
+
+\subsection{Função \texttt{msb}}
+Determina o bit mais significativo de um número.
+
+\begin{lstlisting}[language=Python]
+    def msb(n): #bit mais significativo
+    """
+    Most Significant Bit
+    Args:
+        n: numero para ser calculado o MSB
+    Returns:
+        int: MSB
+    """
+        msb = 0
+        while n > 0:
+            n >>= 1
+            msb += 1
+        return msb
+    \end{lstlisting}
+
+\subsection{Função \texttt{number\textunderscore of\textunderscore bits}}
+Calcula a quantidade de bits necessária para representar um número.
+
+\begin{lstlisting}[language=Python]
+    def number_of_bits(n): #calcula o numero de bits de um certo numero
+    """
+    Number of Bits
+    Args:
+        n: numero para ser calculado a quantidade de bits
+    Returns:
+        int: quantidade de bits
+    """
+        temp = n
+        count = 0
+        while(temp != 0):
+            temp = shift_right(1, temp)
+            count += 1
+        return count
+    \end{lstlisting}
+
+\subsection{Função \texttt{DB}}
+Concatena um hash  e uma mensagem, adicionando um preenchimento de no minimo 8 bits.
+
+\begin{lstlisting}[language=Python]
+    def DB(pHash, mensagem): #faz a concatenacao de pHash e mensagem
+    """
+    DB
+    Obs:
+        padding minimo de 8 bits
+    Args:
+        pHash: pHash
+        mensagem: mensagem
+    Returns:
+        int: DB com padding
+    """
+        pHash = shift_left(1536 , pHash)
+        padding = shift_left(number_of_bits(mensagem), 1)
+        pHash = pHash | padding
+        return (pHash | mensagem)
+    \end{lstlisting}
+
+\subsection{Função \texttt{prime\textunderscore numbers}}
+Gera dois números primos utilizando o teste de Miller-Rabin.
+
+\begin{lstlisting}[language=Python]
+    def prime_numbers(): #descobre os numeros primos usando a funcao de Miller-Rabin
+    """
+    Descobrindo os numeros primos
+    Args: none
+    Returns:
+        list: lista com os numeros primos
+    """
+        n = 1 << 1024
+        contador = 0
+        par_de_numeros_primos = []
+        while True:
+            if miller_rabin(n):
+                par_de_numeros_primos.append(n)
+                contador += 1
+            if contador == 2:
+                break
+            n += 1
+        return par_de_numeros_primos
+    \end{lstlisting}
+
+\subsection{Função \texttt{enc\textunderscore oaep}}
+Implementa a etapa de encapsulamento OAEP para preparacão da mensagem antes da criptografia RSA.
+
+\begin{lstlisting}[language=Python]
+    def enc_oaep(mensagem): #encriptacao OAEP
+    """
+    Encapsulamento OAEP
+    Args:
+        mensagem: mensagem
+    Returns:
+        int: EM
+    """
+        seed = random.getrandbits(256).to_bytes(32, byteorder="big")                                # gera uma seed aleatoria
+        seed = int.from_bytes(seed, byteorder='big')                                                # converte a seed para int
+        pHash = hashlib.sha3_256().digest()                                                         # hash de NULL
+        pHash = int.from_bytes(pHash, byteorder='big')                                              # converte o hash da seed para int
+        maskedDB = DB(pHash, mensagem) ^ int.from_bytes(mgf1(seed, 1792, hashlib.sha3_256))         # faz a concatenacao de pHash e mensagem
+        maskedSeed = seed ^ int.from_bytes(mgf1(maskedDB, 32, hashlib.sha3_256))                    # faz a mascara da seed
+        maskedSeed = shift_left(1792, maskedSeed)                                                   # desloca a seed para a esquerda em 1792 bits
+        EM = maskedSeed | maskedDB                                                                  # concatena a mascara da seed e a mascara da mensagem
+        return EM
+    \end{lstlisting}
+
+\subsection{Função \texttt{dec\textunderscore oaep}}
+Realiza a decodificacão OAEP para recuperar a mensagem original após a descriptografia RSA.
+
+\begin{lstlisting}[language=Python]
+    def dec_oaep(c): #decriptacao OAEP
+    """
+    Decriptando OAEP
+    Args:
+        c: EM
+    Returns:
+        int: m
+    """
+        bitMask = shift_left(1792, 1) - 1                                                           # mascara de bits
+        maskedDB = c & bitMask
+        maskedSeed = shift_right(1792, c)                                                                      # mascara de DB
+        seed = maskedSeed ^ int.from_bytes(mgf1(maskedDB, 32, hashlib.sha3_256), byteorder='big')   #
+        db = maskedDB ^ int.from_bytes(mgf1(seed, 1792, hashlib.sha3_256), byteorder='big')         #      
+        bitMask = shift_left(1536, 1) - 1                                                           #
+        m = db & bitMask                                                                            #
+        MSBit = msb(m) - 1                                                                          #
+        MSBit = shift_left(MSBit, 1)                                                                #
+        m = m ^ MSBit                                                                               #
+        return m
+    \end{lstlisting}
+
+\subsection{Função \texttt{multiplicative\textunderscore inverse}}
+Calcula o inverso multiplicativo de um número utilizando o algoritmo estendido de Euclides.
+
+\begin{lstlisting}[language=Python]
+    def multiplicative_inverse(a, b): # calcula o inverso multiplicativo usando o Algoritmo extendido de Euclides
+    """
+    Inverso multiplicativo
+    Obs
+        a > b
+        a x t1 e congruente 1 mod b
+    Args:
+        a: numero
+        b: numero
+    Returns:
+        int: inverso multiplicativo
+    """
+        if b > a:
+            a, b = b, a
+        old_a = a                                       
+        if gcd(a, b) != 1:                              
+            return None
+        q = a // b
+        r = a % b
+        t1 = 0
+        t2 = 1
+        t = t1 - t2 * q
+        while b != 0:
+            a, b = b, r
+            if b == 0:
+                t1 = t2
+                if t1 < 0:
+                    t1 += old_a
+                return t1
+            q = a // b
+            r = a % b
+            t1, t2 = t2, t
+            t = t1 - t2 * q
+    \end{lstlisting}
+
+\subsection{Funções \texttt{base64\textunderscore encode} e \texttt{base64\textunderscore decode}}
+Implementam codificacão e decodificacão Base64.
+
+\begin{lstlisting}[language=Python]
+    def base64_encode(mensagem): #codificacao usando a base64
+    """
+    Base64 Encode
+    Args:
+        mensagem: mensagem
+    Returns:
+        bytes: mensagem codificada
+    """
+        mensagem = mensagem.encode('utf-8')
+        mensagem = base64.b64encode(mensagem)
+        return mensagem
+
+    def base64_decode(mensagem_encriptada): #decodificacao usando a base64
+    """
+    Base64 Decode
+    Args:
+        mensagem_encriptada: int mensagem encriptada
+    Returns:
+        str: mensagem decodificada
+    """
+        mensagem_encriptada = mensagem_encriptada.to_bytes((mensagem_encriptada.bit_length() + 7) // 8, byteorder='big')
+        mensagem_encriptada = base64.b64decode(mensagem_encriptada).decode('utf-8')
+        return mensagem_encriptada
+    \end{lstlisting}
+
+\subsection{Funções \texttt{enc\textunderscore rsa} e \texttt{dec\textunderscore rsa}}
+Realizam a criptografia e descriptografia RSA.
+
+\begin{lstlisting}[language=Python]
+    def enc_rsa(n, e, m): #encriptacao RSA
+    """
+    RSA Encryption
+    Args:
+        n: produto dos primos n
+        e: chave public e
+        m: mensagem
+    Returns:
+        int: c
+        int: n
+    """
+        c = pow(m, e, n)
+        return c, n
+
+    def dec_rsa(p, q, e, c): #decriptacao RSA
+    """
+    RSA Decryption
+    Args:
+        p: primo p
+        q: primo q
+        e: chave publica e
+        c: mensagem criptografada
+    Returns:
+        int: mensagem descriptografada m
+    """
+        n = p * q
+        phi = (p - 1) * (q - 1)
+        d = multiplicative_inverse(phi, e)
+        m = pow(c, d, n)
+        return m
+    \end{lstlisting}
+
+\subsection{Funções \texttt{assinatura\textunderscore com\textunderscore rsa} e \texttt{verificar\textunderscore assinatura\textunderscore com\textunderscore rsa}}
+Geram uma assinatura digital usando RSA e verificam sua autenticidade.
+
+\begin{lstlisting}[language=Python]
+    def assinatura_com_rsa(message, key, n): #assinatura com RSA
+        message = base64_encode(message)
+        message = int.from_bytes(message, byteorder='big')
+        hash_message = hashlib.sha3_256(message.to_bytes(32, byteorder='big')).digest()
+        hash_message = int.from_bytes(hash_message, byteorder='big')
+        encrypted_hash = enc_rsa(n, key, hash_message)[0]
+        return message, encrypted_hash
+
+    def verificar_assinatura_com_rsa(message, enc_hash, e, n):
+        decrypted_hash = enc_rsa(n, e, enc_hash)
+        hash_message = hashlib.sha3_256(message.to_bytes(32, byteorder='big')).digest()
+        hash_message = int.from_bytes(hash_message, byteorder='big')
+        return decrypted_hash[0] == hash_message
+    \end{lstlisting}
+
+\subsection{Código de teste}
+O código de teste gera dois números primos, calcula  e , codifica uma mensagem em Base64, realiza a criptografia RSA, descriptografa a mensagem, gera e verifica uma assinatura digital.
+\begin{lstlisting}[language=Python]
+    # Teste de execucao do programa
+    lista = prime_numbers()
+    p = lista[0]
+    q = lista[1]
+    n = p * q
+    phi = (p - 1) * (q - 1)
+    e = 65537
+    message = "Bluey Heeler"
+
+    print("Texto original:", message)
+    print("===================================================")
+    message = base64_encode(message)
+    print("Message com BASE64:", message)
+    print("===================================================")
+    message = enc_oaep(int.from_bytes(message, byteorder='big'))
+    print("Message com OAEP:", message)
+    print("===================================================")
+    enc_message = enc_rsa(p * q, e, message)[0]
+    print("Message encriptada com RSA:", enc_message)
+    print("===================================================")
+    dec_message = dec_rsa(p, q, e, enc_message)
+    print("Message descriptografada com RSA:", dec_message)
+    print("===================================================")
+    dec_message = dec_oaep(dec_message)
+    print("Message descriptografada com OAEP:", dec_message)
+    print("===================================================")
+    dec_message = base64_decode(dec_message)
+    print("Message descriptografada com BASE64:", dec_message)
+
+    d = multiplicative_inverse(e, phi)
+    message = "Bluey Heeler"
+    c = (assinatura_com_rsa(message, d, n))
+    verificar_assinatura_com_rsa(c[0], c[1], e, n)
+\end{lstlisting}
+
+\subsection{Impressão dos resultados}
+Por fim, o código imprime os resultados obtidos durante o teste.
+
+\begin{lstlisting}[language=Python, breaklines=true]
+Texto original: Bluey Heeler
+============================================================
+Message com BASE64: b'Qmx1ZXkgSGVlbGVy'
+============================================================
+Message com OAEP: 123934030549754492491210231517666468099730
+369442567688928578558286419964863381939669809836534438834640
+574310406666447300575050808586264352549897458907546763535965
+984452608526562908810643416967711008306866672881682194684283
+740557775781735790577949197826806275977650831281749354860437
+523127708065751832847683773984717204032294259713046385753159
+905749941944973553402221672293014068464668257642064375871658
+774153288925901118853075942714803710368797697455635279938888
+554817566393562761016967537375626053087500121574139942083547
+872647694721457958554497259380122494023896678864888018821502
+07057265257655761708155591178055546
+============================================================
+Message encriptada com RSA: 15056002831305386429369578095355
+508273616502034331236071775124786842864065033001042693931720
+646944781588159691880277391553798572617769934379623251912328
+846197149916658589532294448631519904152853405610787998586710
+899393634545821672318441986195833808438244444473133093529842
+908609702557069293870537639358475093499886731555097184848691
+033170877550709922480953798163720998271677316482433149367349
+280445062421288233406709124016609068591255854451085685936615
+294531036455966095834693157492962824461428369243671654428706
+376324900791509868420949038355712002219951420371594635475017
+482891061696236046241908471012372146994055492
+============================================================
+Message descriptografada com RSA: 12393403054975449249121023
+151766646809973036944256768892857855828641996486338193966980
+983653443883464057431040666644730057505080858626435254989745
+890754676353596598445260852656290881064341696771100830686667
+288168219468428374055777578173579057794919782680627597765083
+128174935486043752312770806575183284768377398471720403229425
+971304638575315990574994194497355340222167229301406846466825
+764206437587165877415328892590111885307594271480371036879769
+745563527993888855481756639356276101696753737562605308750012
+157413994208354787264769472145795855449725938012249402389667
+886488801882150207057265257655761708155591178055546
+============================================================
+Message descriptografada com OAEP: 1082358658154514268713979
+21985126684281
+============================================================
+Message descriptografada com BASE64: Bluey Heeler
+\end{lstlisting}
+
+\section{Fluxo Geral do Código}
 
 \begin{enumerate}
-
-
-    \item \textbf{Paradigma epistemológico:} Quali-Quanti \\
-    O artigo adota uma abordagem em maior parte quantitativa, uma vez que se baseia em análise de literatura e técnicas de mineração de texto para analisar um grande volume de publicações existentes. Porém existem também aspectos qualitativos, já que o estudo busca interpretar os resultados e identificar tendências temáticas na pesquisa sobre inteligência artificial em educação à distância.
-    
-    \item \textbf{Tipo de método:} Dedutivo \\
-    O método utilizado é dedutivo, pois parte de premissas gerais sobre o uso de inteligência artificial na educação a distância para analisar estudos específicos já realizados.
-    
-    \item \textbf{Objeto de pesquisa:} Bibliográfico \\
-    A pesquisa é baseada em publicações já existentes sobre o tema, não envolvendo coleta de novos dados diretamente dos usuários ou ambientes de aprendizagem.
-    
-    \item \textbf{Profundidade:} Descritiva e Exploratória \\
-    O estudo é descritivo ao apresentar um panorama geral sobre as pesquisas realizadas, incluindo algumas tendências temporais, áreas de maior interesse e temas emergentes. Também possui caráter exploratório, pois busca identificar novas áreas de investigação e questionamentos relacionados ao uso de inteligência artificial na educação a distância.
-    
-    \item \textbf{Tempo decorrido:} Transversal \\
-    A análise abrange um período amplo, desde o final da década de 1990 até 2022, permitindo observar a evolução do interesse e das tendências de pesquisa ao longo do tempo.
+    \item Geração de dois números primos p e q.
+    \item Cálculo de n e de phi.
+    \item Definição da chave pública e cálculo da chave privada.
+    \item Codificação da mensagem em Base64, seguida do algoritmo OAEP.
+    \item Criptografia da mensagem com RSA.
+    \item Descriptografia da mensagem e reversão do processo de OAEP e Base64.
+    \item Geração e verificação de uma assinatura digital.
+    \item Teste de execução do programa.
+    \item Impressão dos resultados.
 \end{enumerate}
 
-\section{Query de Busca:} (\#6) AND ALL=(use of (artificial intelligence or ai) learning in education)
-
-\section{5 Artigos mais relevantes na pesquisa:}
-
-\begin{enumerate}
-    \item Artificial Intelligence and Reflections from Educational Landscape: A Review of AI Studies in Half a Century ("Inteligência Artificial e Reflexões do Cenário Educacional: Uma Revisão dos Estudos de IA em Meio Século" em Português)
-
-    \item Guest Editorial: Human-centered AI in Education: Augment Human Intelligence with Machine Intelligence ("Editorial convidado: IA centrada no ser humano na educação: aumente a inteligência humana com inteligência de máquina" em Português)
-    
-    \item The Use of Artificial Intelligence (AI) in Online Learning and Distance Education Processes: A Systematic Review of Empirical Studies ("O Uso da Inteligência Artificial (IA) em Processos de Aprendizagem Online e Educação a Distância: Uma Revisão Sistemática de Estudos Empíricos" em Português)
-    
-    \item Enhancing cardiovascular artificial intelligence (AI) research in the Netherlands: CVON-AI consortium ("Melhorando a pesquisa de inteligência artificial (IA) cardiovascular na Holanda: consórcio CVON-AI" em Português)
-    
-    \item Artificial Intelligence Literacy: Developing a Multi-institutional Infrastructure for AI Education ("Alfabetização em Inteligência Artificial: Desenvolvendo uma Infraestrutura Multiinstitucional para Educação em IA" em Português)
-    
-\end{enumerate}
+\section{Conclusão}
+O código implementa um sistema robusto de criptografia e assinatura digital utilizando RSA. As funções desenvolvidas garantem a integridade e segurança dos dados manipulados, demonstrando o funcionamento prático da criptografia assimétrica combinada com técnicas adicionais de segurança.
 
 \end{document}

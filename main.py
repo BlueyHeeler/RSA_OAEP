@@ -1,16 +1,16 @@
 import hashlib              # biblioteca para hash
-import random               # biblioteca para números aleatórios
-from math import gcd        # biblioteca para cálculo de MDC
-import base64               # biblioteca para codificação e decodificação de base64
+import random               # biblioteca para numeros aleatórios
+from math import gcd        # biblioteca para calculo de MDC
+import base64               # biblioteca para codificaçao e decodificaçao de base64
 
 def decompondo(n):
     """
-    Decompõe n-1 como 2^e * m, onde n é ímpar.
+    Decompoe n-1 como 2^e * m, onde n e ímpar.
     Args:
-        n: número para decompor
+        n: numero para decompor
     Returns:
         int: expoente
-        int: número
+        int: numero
     """
     e = 0
     m = n - 1
@@ -26,7 +26,7 @@ def miller_rabin(n, rodadas=10):
         n: numero para ser testado
         rodadas: quantidade de rodadas a serem feitas
     Returns:
-        bool: True se é primo, False se não é primo
+        bool: True se e primo, False se nao e primo
     """
     if n <= 1 or n == 4:
         return False
@@ -40,11 +40,11 @@ def miller_rabin(n, rodadas=10):
         a = random.randrange(2, n - 2) # pega um numero aleatorio entre 2 e n-2
         """ x = a^m mod n """
         x = pow(a, m, n) 
-        if x == 1 or x == n-1: # se x for 1 ou n-1, então n é primo
+        if x == 1 or x == n-1: # se x for 1 ou n-1, entao n e primo
             continue
         else:
             teste = False
-            for _ in range(expo_k - 1): # para i de 0 até k-1
+            for _ in range(expo_k - 1): # para i de 0 ate k-1
                 """ x = x^2 mod n """ 
                 x = pow(x, 2, n)
                 if x == n-1:
@@ -56,8 +56,8 @@ def miller_rabin(n, rodadas=10):
                 return False
     return True
 
-def mgf1(seed: int, length: int, hash_func=hashlib.sha1) -> bytes: #máscara de geração de função
-    if length > (hash_func().digest_size * (2**32)): #tamanho da máscara 
+def mgf1(seed: int, length: int, hash_func=hashlib.sha1) -> bytes: #mascara de geraçao de funçao
+    if length > (hash_func().digest_size * (2**32)): #tamanho da mascara 
         raise ValueError("mask too long")
     # Converte o tamanho de bits para bytes
     byte_length = (length + 7) // 8
@@ -76,9 +76,9 @@ def shift_left(shift_values, n): #deslocamento para a esquerda
     Shift Left
     Args:
         shift_values: quantidade de shift
-        n: número para ser shiftado
+        n: numero para ser shiftado
     Returns:
-        int: número shiftado
+        int: numero shiftado
     """
     return n << shift_values
 
@@ -87,9 +87,9 @@ def shift_right(shift_values, n): #deslocamento para a direita
     Shift Right
     Args:
         shift_values: quantidade de shift
-        n: número para ser shiftado
+        n: numero para ser shiftado
     Returns:
-        int: número shiftado
+        int: numero shiftado
     """
     return n >> shift_values
 
@@ -97,7 +97,7 @@ def msb(n): #bit mais significativo
     """
     Most Significant Bit
     Args:
-        n: número para ser calculado o MSB
+        n: numero para ser calculado o MSB
     Returns:
         int: MSB
     """
@@ -107,11 +107,11 @@ def msb(n): #bit mais significativo
         msb += 1
     return msb
 
-def number_of_bits(n): #calcula o número de bits de um certo número
+def number_of_bits(n): #calcula o numero de bits de um certo numero
     """
     Number of Bits
     Args:
-        n: número para ser calculado a quantidade de bits
+        n: numero para ser calculado a quantidade de bits
     Returns:
         int: quantidade de bits
     """
@@ -122,7 +122,7 @@ def number_of_bits(n): #calcula o número de bits de um certo número
         count += 1
     return count
 
-def DB(pHash, mensagem): #faz a concatenação de pHash e mensagem
+def DB(pHash, mensagem): #faz a concatenaçao de pHash e mensagem
     """
     DB
     Obs:
@@ -138,12 +138,12 @@ def DB(pHash, mensagem): #faz a concatenação de pHash e mensagem
     pHash = pHash | padding
     return (pHash | mensagem)
 
-def prime_numbers(): #descobre os números primos usando a função de Miller-Rabin
+def prime_numbers(): #descobre os numeros primos usando a funçao de Miller-Rabin
     """
-    Descobrindo os números primos
+    Descobrindo os numeros primos
     Args: none
     Returns:
-        list: lista com os números primos
+        list: lista com os numeros primos
     """
     n = 1 << 1024
     contador = 0
@@ -196,7 +196,7 @@ print("Number of bits: ", number_of_bits(db))
 
 """
 
-def enc_oaep(mensagem): #encriptação OAEP
+def enc_oaep(mensagem): #encriptaçao OAEP
     """
     Encapsulamento OAEP
     Args:
@@ -208,13 +208,13 @@ def enc_oaep(mensagem): #encriptação OAEP
     seed = int.from_bytes(seed, byteorder='big')                                                # converte a seed para int
     pHash = hashlib.sha3_256().digest()                                                         # hash de NULL
     pHash = int.from_bytes(pHash, byteorder='big')                                              # converte o hash da seed para int
-    maskedDB = DB(pHash, mensagem) ^ int.from_bytes(mgf1(seed, 1792, hashlib.sha3_256))         # faz a concatenação de pHash e mensagem
-    maskedSeed = seed ^ int.from_bytes(mgf1(maskedDB, 32, hashlib.sha3_256))                    # faz a máscara da seed
+    maskedDB = DB(pHash, mensagem) ^ int.from_bytes(mgf1(seed, 1792, hashlib.sha3_256))         # faz a concatenaçao de pHash e mensagem
+    maskedSeed = seed ^ int.from_bytes(mgf1(maskedDB, 32, hashlib.sha3_256))                    # faz a mascara da seed
     maskedSeed = shift_left(1792, maskedSeed)                                                   # desloca a seed para a esquerda em 1792 bits
-    EM = maskedSeed | maskedDB                                                                  # concatena a máscara da seed e a máscara da mensagem
+    EM = maskedSeed | maskedDB                                                                  # concatena a mascara da seed e a mascara da mensagem
     return EM
 
-def dec_oaep(c): #decriptação OAEP
+def dec_oaep(c): #decriptaçao OAEP
     """
     Decriptando OAEP
     Args:
@@ -222,9 +222,9 @@ def dec_oaep(c): #decriptação OAEP
     Returns:
         int: m
     """
-    bitMask = shift_left(1792, 1) - 1                                                           # máscara de bits
+    bitMask = shift_left(1792, 1) - 1                                                           # mascara de bits
     maskedDB = c & bitMask
-    maskedSeed = shift_right(1792, c)                                                                      # máscara de DB
+    maskedSeed = shift_right(1792, c)                                                                      # mascara de DB
     seed = maskedSeed ^ int.from_bytes(mgf1(maskedDB, 32, hashlib.sha3_256), byteorder='big')   #
     db = maskedDB ^ int.from_bytes(mgf1(seed, 1792, hashlib.sha3_256), byteorder='big')         #      
     bitMask = shift_left(1536, 1) - 1                                                           #
@@ -239,10 +239,10 @@ def multiplicative_inverse(a, b): # calcula o inverso multiplicativo usando o Al
     Inverso multiplicativo
     Obs
         a > b
-        a * t1 ≅ 1 mod b
+        a x t1 ≅ 1 mod b
     Args:
-        a: número
-        b: número
+        a: numero
+        b: numero
     Returns:
         int: inverso multiplicativo
     """
@@ -268,7 +268,7 @@ def multiplicative_inverse(a, b): # calcula o inverso multiplicativo usando o Al
         t1, t2 = t2, t
         t = t1 - t2 * q
 
-def base64_encode(mensagem): #codificação usando a base64
+def base64_encode(mensagem): #codificaçao usando a base64
     """
     Base64 Encode
     Args:
@@ -280,7 +280,7 @@ def base64_encode(mensagem): #codificação usando a base64
     mensagem = base64.b64encode(mensagem)
     return mensagem
 
-def base64_decode(mensagem_encriptada): #decodificação usando a base64
+def base64_decode(mensagem_encriptada): #decodificaçao usando a base64
     """
     Base64 Decode
     Args:
@@ -292,12 +292,12 @@ def base64_decode(mensagem_encriptada): #decodificação usando a base64
     mensagem_encriptada = base64.b64decode(mensagem_encriptada).decode('utf-8')
     return mensagem_encriptada
 
-def enc_rsa(n, e, m): #encriptação RSA
+def enc_rsa(n, e, m): #encriptaçao RSA
     """
     RSA Encryption
     Args:
         n: produto dos primos n
-        e: chave públic e
+        e: chave public e
         m: mensagem
     Returns:
         int: c
@@ -306,13 +306,13 @@ def enc_rsa(n, e, m): #encriptação RSA
     c = pow(m, e, n)
     return c, n
 
-def dec_rsa(p, q, e, c): #decriptação RSA
+def dec_rsa(p, q, e, c): #decriptaçao RSA
     """
     RSA Decryption
     Args:
         p: primo p
         q: primo q
-        e: chave pública e
+        e: chave publica e
         c: mensagem criptografada
     Returns:
         int: mensagem descriptografada m
@@ -338,7 +338,7 @@ def verificar_assinatura_com_rsa(message, enc_hash, e, n):
     return decrypted_hash[0] == hash_message
 
 """========================================================================================================"""
-# Teste de execução do programa
+# Teste de execuçao do programa
 
 lista = prime_numbers()
 p = lista[0]
