@@ -361,14 +361,16 @@ print("Message encriptada com RSA:", enc_message)
 print("================================================================================")
 dec_message = dec_rsa(p, q, e, enc_message)
 print("Message descriptografada com RSA:", dec_message)
-print("====================================================================================")
+print("================================================================================")
 dec_message = dec_oaep(dec_message)
 print("Message descriptografada com OAEP:", dec_message)
 print("================================================================================")
 dec_message = base64_decode(dec_message)
 print("Message descriptografada com BASE64:", dec_message)
-
-d = multiplicative_inverse(e, phi)
-message = "Bluey Heeler"
+print("================================================================================")
+d = multiplicative_inverse(e, phi)          #Private key
+message = "Bluey Heeler"                    
 c = (assinatura_com_rsa(message, d, n))
-verificar_assinatura_com_rsa(c[0], c[1], e, n)
+print("Mensagem: ", c[0], "Assinatura: ", c[1])
+print("================================================================================")
+print(verificar_assinatura_com_rsa(c[0], c[1], e, n))

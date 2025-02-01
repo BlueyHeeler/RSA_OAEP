@@ -9,6 +9,7 @@
 \usepackage{amsmath}
 \usepackage[T1]{fontenc}
 \usepackage[brazil]{babel}
+\usepackage{mathrsfs}
 \definecolor{codegreen}{rgb}{0,0.6,0}
 \definecolor{codegray}{rgb}{0.5,0.5,0.5}
 \definecolor{codepurple}{rgb}{0.8,0,0.2}
@@ -47,12 +48,52 @@
 \maketitle
 
 \section{Introdução}
-O código apresentado implementa um sistema de criptografia baseado no algoritmo RSA, combinando técnicas como OAEP (Optimal Asymmetric Encryption Padding), codificacão Base64 e teste de primalidade de Miller-Rabin. Além disso, ele realiza assinatura digital utilizando RSA e verifica a autenticidade da assinatura.
+Os códigos apresentados implementam um sistema de criptografia baseado no algoritmo RSA, combinando técnicas como o OAEP (Optimal Asymmetric Encryption Padding), 
+ codificacão em Base64 e teste de primalidade de Miller-Rabin para identificar números primos. Além disso, ele realiza assinaturas digitais utilizando um esquema que
+ utiliza o RSA e também é possível verifica a autenticidade da assinatura.
 
-\section{Explicação das Funções}
+\section{Introdução Teórica}\\
 
-\subsection{Função \texttt{decompondo}}
-Esta funcão decompõe um número  na forma , onde  é impar.
+O algoritmo RSA é um sistema de criptografia assimétrica que utiliza chaves públicas e privadas para a criptografia e descriptografia de mensagens.
+A segurança do RSA é baseada na dificuldade de fatorar o produto de dois números primos grandes. Porém, o algoritmo RSA, sozinho, para uma mesma mensagem,
+retorna sempre o mesmo texto criptografado. Isso torna o algoritmo suscetível a ataques de análise de frequência,
+onde o atacante pode identificar padrões e inferir informações sobre a mensagem original.
+
+Para mitigar essa vulnerabilidade, técnicas adicionais como o OAEP (Optimal Asymmetric Encryption Padding) são utilizadas.
+O OAEP adiciona um preenchimento aleatório à mensagem antes da criptografia,
+garantindo que textos iguais resultem em criptogramas diferentes.
+Além disso, a codificação Base64 é empregada para converter dados binários em uma representação textual,
+facilitando a manipulação e transmissão segura das mensagens.
+
+Outro componente essencial do sistema é o teste de primalidade de Miller-Rabin, utilizado para garantir
+ que os números gerados para as chaves sejam realmente primos. A assinatura digital com RSA também é
+  implementada para assegurar a autenticidade e integridade das mensagens, permitindo que o receptor
+   verifique se a mensagem foi enviada pelo remetente legítimo e não foi alterada durante a transmissão.
+
+\section{Fluxo Geral da Implementação}
+
+\begin{enumerate}
+    \item Geração de dois números primos p e q.
+    \subitem - Miller Rabin
+    \subsubitem - Decompondo
+    \subitem - Gerar Primos de 1024 bits
+    \item Cálculo de n e de phi.
+    \item Definição da chave pública e cálculo da chave privada.
+    \item Codificação da mensagem em Base64, seguida do algoritmo OAEP.
+    \item Criptografia da mensagem com RSA.
+    \item Descriptografia da mensagem e reversão do processo de OAEP e Base64.
+    \item Geração e verificação de uma assinatura digital.
+    \item Teste de execução do programa.
+    \item Impressão dos resultados.
+\end{enumerate}
+
+\section{Geração dos números primos}
+\subsection*{Função \texttt{decompondo(n)}}
+Esta funcão decompõe um número no seguinte formato. Ela será utilizada em uma das etapas do algoritmo 
+de Miller Rabin.
+\[
+n = 2^ e \cdot m
+\]
 
 \begin{lstlisting}[language=Python]
 def decompondo(n):
@@ -112,112 +153,26 @@ Implementa o teste de primalidade de Miller-Rabin, retornando verdadeiro se o n�
         return True
     \end{lstlisting}
 
-\subsection{Função \texttt{mgf1}}
-Mascara uma entrada utilizando uma funcão de hash para gerar uma saida pseudoaleatória de comprimento especificado.
+\subsubsection*{Teste de primalidade de Miller-Rabin}
 
-\begin{lstlisting}[language=Python]
-    def mgf1(seed: int, length: int, hash_func=hashlib.sha1) -> bytes: #mascara de geracao de funcao
-        if length > (hash_func().digest_size * (2**32)): #tamanho da mascara 
-            raise ValueError("mask too long")
-        # Converte o tamanho de bits para bytes
-        byte_length = (length + 7) // 8
-        # Converte a seed para um tamanho fixo de bytes
-        seed_bytes = seed.to_bytes((seed.bit_length() + 7) // 8, byteorder='big')
-        T = b""
-        counter = 0
-        while len(T) < byte_length: # enquanto o tamanho de T for menor que o tamanho de bytes
-            C = counter.to_bytes(4, byteorder='big')
-            T += hash_func(seed_bytes + C).digest()
-            counter += 1
-        return T[:byte_length]
-    \end{lstlisting}
+\subsubsection*{Teoria do Teste de Primalidade de Miller-Rabin}
 
-\subsection{Funções \texttt{shift\textunderscore left} e \texttt{shift\textunderscore right}}
-Realizam deslocamento de bits para a esquerda e direita, respectivamente.
+O teste de primalidade de Miller-Rabin é um algoritmo probabilístico utilizado para determinar se um número é primo. Ele é baseado no pequeno teorema de Fermat, que afirma que se \( p \) é um número primo e \( a \) é um inteiro tal que \( 1 \leq a < p \), então:
 
-\begin{lstlisting}[language=Python]
-    def shift_left(shift_values, n): #deslocamento para a esquerda
-    """
-    Shift Left
-    Args:
-        shift_values: quantidade de shift
-        n: numero para ser shiftado
-    Returns:
-        int: numero shiftado
-    """
-        return n << shift_values
+\[
+a^{p-1} \equiv 1 \pmod{p}
+\]
 
-    def shift_right(shift_values, n): #deslocamento para a direita
-    """
-    Shift Right
-    Args:
-        shift_values: quantidade de shift
-        n: numero para ser shiftado
-    Returns:
-        int: numero shiftado
-    """
-        return n >> shift_values
-    \end{lstlisting}
+O teste de Miller-Rabin estende essa ideia, verificando se um número composto pode ser identificado por
+meio de várias iterações de um teste baseado em exponenciação modular. O algoritmo funciona da seguinte forma:\\
+1. \textbf{Decompor}: Decompõe \( n-1 \) na forma \( 2^k \cdot m \), onde \( m \) é ímpar.\\
+2. \textbf{Escolha de Testes}: Escolhe um número aleatório \( a \) tal que \( 2 \leq a \leq n-2 \).\\
+3. \textbf{Exponenciação Modular}: Calcula \( x = a^m \mod n \).\\
+4. \textbf{Verificação Inicial}: Se \( x = 1 \) ou \( x = n-1 \), então \( n \) pode ser primo.\\
+5. \textbf{Iterações}: Para \( k-1 \) iterações, calcula \( x = x^2 \mod n \). Se em qualquer iteração \( x = n-1 \), então \( n \) pode ser primo.\\
+6. \textbf{Conclusão}: Se nenhuma das condições acima for satisfeita, \( n \) é composto.\\
 
-\subsection{Função \texttt{msb}}
-Determina o bit mais significativo de um número.
-
-\begin{lstlisting}[language=Python]
-    def msb(n): #bit mais significativo
-    """
-    Most Significant Bit
-    Args:
-        n: numero para ser calculado o MSB
-    Returns:
-        int: MSB
-    """
-        msb = 0
-        while n > 0:
-            n >>= 1
-            msb += 1
-        return msb
-    \end{lstlisting}
-
-\subsection{Função \texttt{number\textunderscore of\textunderscore bits}}
-Calcula a quantidade de bits necessária para representar um número.
-
-\begin{lstlisting}[language=Python]
-    def number_of_bits(n): #calcula o numero de bits de um certo numero
-    """
-    Number of Bits
-    Args:
-        n: numero para ser calculado a quantidade de bits
-    Returns:
-        int: quantidade de bits
-    """
-        temp = n
-        count = 0
-        while(temp != 0):
-            temp = shift_right(1, temp)
-            count += 1
-        return count
-    \end{lstlisting}
-
-\subsection{Função \texttt{DB}}
-Concatena um hash  e uma mensagem, adicionando um preenchimento de no minimo 8 bits.
-
-\begin{lstlisting}[language=Python]
-    def DB(pHash, mensagem): #faz a concatenacao de pHash e mensagem
-    """
-    DB
-    Obs:
-        padding minimo de 8 bits
-    Args:
-        pHash: pHash
-        mensagem: mensagem
-    Returns:
-        int: DB com padding
-    """
-        pHash = shift_left(1536 , pHash)
-        padding = shift_left(number_of_bits(mensagem), 1)
-        pHash = pHash | padding
-        return (pHash | mensagem)
-    \end{lstlisting}
+O teste é repetido várias vezes com diferentes valores de \( a \) para aumentar a confiança no resultado. Se o número passar em todas as iterações, ele é considerado provavelmente primo.
 
 \subsection{Função \texttt{prime\textunderscore numbers}}
 Gera dois números primos utilizando o teste de Miller-Rabin.
@@ -243,6 +198,133 @@ Gera dois números primos utilizando o teste de Miller-Rabin.
         return par_de_numeros_primos
     \end{lstlisting}
 
+É uma maneira bem rudimentar de descobrir o par de números primos com mais de 1024 bits, mas é suficiente para a nossa aplicação.
+ Porém é importante ressaltar que para aplicações
+ reais, é necessário um método mais robusto para a geração dos números primos, pois no nosso caso sempre será gerado os mesmos números primos.
+
+\section{Implementação do OAEP}
+
+\subsection{Função \texttt{mgf1}}
+Mascara uma entrada utilizando uma funcão de hash para gerar uma saida pseudoaleatória de comprimento específico.
+
+\begin{lstlisting}[language=Python]
+    def mgf1(seed: int, length: int, hash_func=hashlib.sha1) -> bytes: #mascara de geracao de funcao
+        if length > (hash_func().digest_size * (2**32)): #tamanho da mascara 
+            raise ValueError("mask too long")
+        # Converte o tamanho de bits para bytes
+        byte_length = (length + 7) // 8
+        # Converte a seed para um tamanho fixo de bytes
+        seed_bytes = seed.to_bytes((seed.bit_length() + 7) // 8, byteorder='big')
+        T = b""
+        counter = 0
+        while len(T) < byte_length: # enquanto o tamanho de T for menor que o tamanho de bytes
+            C = counter.to_bytes(4, byteorder='big')
+            T += hash_func(seed_bytes + C).digest()
+            counter += 1
+        return T[:byte_length]
+    \end{lstlisting}
+
+Não criamos o código acima retiramos de uma implementaçaõ encontrada na web.
+O link estará disponibilizado nas referências.
+
+\vspace{7 cm}
+\subsection{Funções básicas}
+
+\texttt{Shift\_left} e \texttt{Shift\_right} realizam o deslocamento dos bits para a esquerda e direita, respectivamente.
+\texttt{MSB} calcula o bit mais significativo de um número. \texttt{Number\_of\_bits} calcula o número de bits de um número.
+
+\begin{lstlisting}[language=Python]
+    def shift_left(shift_values, n): #deslocamento para a esquerda
+    """
+    Shift Left
+    Args:
+        shift_values: quantidade de shift
+        n: numero para ser shiftado
+    Returns:
+        int: numero shiftado
+    """
+        return n << shift_values
+
+    def shift_right(shift_values, n): #deslocamento para a direita
+    """
+    Shift Right
+    Args:
+        shift_values: quantidade de shift
+        n: numero para ser shiftado
+    Returns:
+        int: numero shiftado
+    """
+        return n >> shift_values
+
+    def msb(n): #bit mais significativo
+    """
+    Most Significant Bit
+    Args:
+        n: numero para ser calculado o MSB
+    Returns:
+        int: MSB
+    """
+        msb = 0
+        while n > 0:
+            n >>= 1
+            msb += 1
+        return msb
+
+    def number_of_bits(n): #calcula o numero de bits de um certo numero
+    """
+    Number of Bits
+    Args:
+        n: numero para ser calculado a quantidade de bits
+    Returns:
+        int: quantidade de bits
+    """
+        temp = n
+        count = 0
+        while(temp != 0):
+            temp = shift_right(1, temp)
+            count += 1
+        return count
+
+
+    \end{lstlisting}
+
+\subsection{Função \texttt{DB}}
+Concatena um hash  e uma mensagem, adicionando um preenchimento de no minimo 8 bits.
+
+\begin{lstlisting}[language=Python]
+    def DB(pHash, mensagem): #faz a concatenacao de pHash e mensagem
+    """
+    DB
+    Obs:
+        padding minimo de 8 bits
+    Args:
+        pHash: pHash
+        mensagem: mensagem
+    Returns:
+        int: DB com padding
+    """
+        pHash = shift_left(1536 , pHash)
+        padding = shift_left(number_of_bits(mensagem), 1)
+        pHash = pHash | padding
+        return (pHash | mensagem)
+    \end{lstlisting}
+
+    A função \texttt{DB} é responsável por concatenar um hash e uma mensagem, adicionando um preenchimento de no mínimo 8 bits, padding.
+     O preenchimento é necessário para garantir que a mensagem tenha um comprimento adequado para o processo de criptografia.
+      A função realiza as seguintes etapas:
+
+    \begin{enumerate}
+        \item Calcula o hash de um parámetro pré-definido (neste caso, \texttt{pHash(NULL)}).
+        \item Desloca o hash para a esquerda em 1536 bits. Isso é necessário, pois o pHash deve ficar encaixado nos 256 bits mais significativos do DB.
+        \item Calcula o padding necessário para a mensagem, setando em 1 o bit à esquerda do MSB da mensagem.
+        \item Realiza a operação lógica OR com o pHash e o padding.
+        \item Realiza a operação lógica OR com o resultado anterior e a mensagem.
+    \end{enumerate}
+
+    A função retorna o valor concatenado de 1792 bits, que será utilizado nas etapas subsequentes do processo de encapsulamento OAEP.
+
+\vspace{4 cm}
+
 \subsection{Função \texttt{enc\textunderscore oaep}}
 Implementa a etapa de encapsulamento OAEP para preparacão da mensagem antes da criptografia RSA.
 
@@ -265,6 +347,16 @@ Implementa a etapa de encapsulamento OAEP para preparacão da mensagem antes da 
         EM = maskedSeed | maskedDB                                                                  # concatena a mascara da seed e a mascara da mensagem
         return EM
     \end{lstlisting}
+
+    \begin{enumerate}
+        \item Geração da Seed: Uma seed aleatória de 256 bits é gerada e convertida para um inteiro.
+        \item pHash de NULL: Um hash SHA-3 de 256 bits de NULL é gerado e convertido para um inteiro.
+        \item maskedDB: A função \texttt{DB} concatena a \texttt{seed} com o \texttt{pHash} e realiza um \texttt(XOR)
+         com a máscara gerada pela função \texttt{mgf1} na seed.
+        \item maskedSeed: A MaskedSeed é criada pela seed \texttt{XOR} com a máscara gerada pela função \texttt{mgf1} no \texttt{maskedDB}.
+        \item Deslocamento da maskedSeed: A maskedSeed é deslocada para a esquerda em 1792 bits.
+        \item Concatenação Final: A maskedSeed é concatenada com um \texttt{OR} com o \texttt{maskedDB}.
+    \end{enumerate}
 
 \subsection{Função \texttt{dec\textunderscore oaep}}
 Realiza a decodificacão OAEP para recuperar a mensagem original após a descriptografia RSA.
@@ -290,6 +382,34 @@ Realiza a decodificacão OAEP para recuperar a mensagem original após a descrip
         m = m ^ MSBit                                                                               #
         return m
     \end{lstlisting}
+    
+    \begin{enumerate}
+        \item Geração da Máscara de Bits:
+        Uma máscara de bits é criada para isolar os últimos 1792 bits de \( c \). A função \texttt{shift\_left(1792, 1)} desloca o número 1 para a esquerda em 1792 bits, resultando em um número com 1792 zeros seguidos de um 1. Subtraindo 1, obtemos uma máscara com 1792 uns.
+    
+        \item Extraindo \texttt{maskedDB}:
+        A operação \( \& \) (AND bit a bit) é usada para extrair os últimos 1792 bits de \( c \), que correspondem ao \texttt{maskedDB}.
+    
+        \item Extraindo \texttt{maskedSeed}:
+        A função \texttt{shift\_right(1792, c)} desloca \( c \) para a direita em 1792 bits, isolando assim a \texttt{maskedSeed}.
+    
+        \item Recuperando a Seed:
+        A seed original é recuperada aplicando uma operação XOR (\( \wedge \)) entre a \texttt{maskedSeed} e uma máscara gerada pela função \texttt{mgf1} aplicada ao \texttt{maskedDB}.
+    
+        \item Recuperando \texttt{db}:
+        O \texttt{db} original é recuperado aplicando uma operação XOR entre o \texttt{maskedDB} e uma máscara gerada pela função \texttt{mgf1} aplicada à seed.
+    
+        \item Máscara de Bits para \texttt{m}:
+        Uma nova máscara de bits é criada para isolar os últimos 1536 bits de \texttt{db}.
+    
+        \item Extraindo a Mensagem \texttt{m}:
+        A mensagem original \( m \) é extraída aplicando a operação \( \& \) (AND bit a bit) entre \texttt{db} e a máscara de bits.
+    
+        \item Ajustando o Bit Mais Significativo (MSB):
+        O bit mais significativo (MSB) da mensagem é ajustado para garantir que a mensagem seja corretamente decodificada. Isso é feito através de operações de deslocamento e XOR.
+    \end{enumerate}
+
+\section{ RSA e Base64 } 
 
 \subsection{Função \texttt{multiplicative\textunderscore inverse}}
 Calcula o inverso multiplicativo de um número utilizando o algoritmo estendido de Euclides.
@@ -359,6 +479,8 @@ Implementam codificacão e decodificacão Base64.
         return mensagem_encriptada
     \end{lstlisting}
 
+\vspace*{8 cm}
+
 \subsection{Funções \texttt{enc\textunderscore rsa} e \texttt{dec\textunderscore rsa}}
 Realizam a criptografia e descriptografia RSA.
 
@@ -418,42 +540,47 @@ Geram uma assinatura digital usando RSA e verificam sua autenticidade.
 O código de teste gera dois números primos, calcula  e , codifica uma mensagem em Base64, realiza a criptografia RSA, descriptografa a mensagem, gera e verifica uma assinatura digital.
 \begin{lstlisting}[language=Python]
     # Teste de execucao do programa
-    lista = prime_numbers()
-    p = lista[0]
-    q = lista[1]
-    n = p * q
-    phi = (p - 1) * (q - 1)
-    e = 65537
-    message = "Bluey Heeler"
 
-    print("Texto original:", message)
-    print("===================================================")
-    message = base64_encode(message)
-    print("Message com BASE64:", message)
-    print("===================================================")
-    message = enc_oaep(int.from_bytes(message, byteorder='big'))
-    print("Message com OAEP:", message)
-    print("===================================================")
-    enc_message = enc_rsa(p * q, e, message)[0]
-    print("Message encriptada com RSA:", enc_message)
-    print("===================================================")
-    dec_message = dec_rsa(p, q, e, enc_message)
-    print("Message descriptografada com RSA:", dec_message)
-    print("===================================================")
-    dec_message = dec_oaep(dec_message)
-    print("Message descriptografada com OAEP:", dec_message)
-    print("===================================================")
-    dec_message = base64_decode(dec_message)
-    print("Message descriptografada com BASE64:", dec_message)
+lista = prime_numbers()
+p = lista[0]
+q = lista[1]
+n = p * q
+phi = (p - 1) * (q - 1)
+e = 65537
+message = "Bluey Heeler"
 
-    d = multiplicative_inverse(e, phi)
-    message = "Bluey Heeler"
-    c = (assinatura_com_rsa(message, d, n))
-    verificar_assinatura_com_rsa(c[0], c[1], e, n)
+print("Texto original:", message)
+print("========================================================")
+message = base64_encode(message)
+print("Message com BASE64:", message)
+print("========================================================")
+message = enc_oaep(int.from_bytes(message, byteorder='big'))
+print("Message com OAEP:", message)
+print("========================================================")
+enc_message = enc_rsa(p * q, e, message)[0]
+print("Message encriptada com RSA:", enc_message)
+print("========================================================")
+dec_message = dec_rsa(p, q, e, enc_message)
+print("Message descriptografada com RSA:", dec_message)
+print("========================================================")
+dec_message = dec_oaep(dec_message)
+print("Message descriptografada com OAEP:", dec_message)
+print("========================================================")
+dec_message = base64_decode(dec_message)
+print("Message descriptografada com BASE64:", dec_message)
+print("========================================================")
+d = multiplicative_inverse(e, phi)          #Private key
+message = "Bluey Heeler"                    
+c = (assinatura_com_rsa(message, d, n))
+print("Mensagem: ", c[0], "Assinatura: ", c[1])
+print("========================================================")
+print(verificar_assinatura_com_rsa(c[0], c[1], e, n))
 \end{lstlisting}
 
 \subsection{Impressão dos resultados}
 Por fim, o código imprime os resultados obtidos durante o teste.
+
+\vspace{4 cm}
 
 \begin{lstlisting}[language=Python, breaklines=true]
 Texto original: Bluey Heeler
@@ -500,23 +627,49 @@ Message descriptografada com OAEP: 1082358658154514268713979
 21985126684281
 ============================================================
 Message descriptografada com BASE64: Bluey Heeler
+============================================================
+Mensagem:  108235865815451426871397921985126684281 
+Assinatura:  72869437866692104393864887608559093734152757359
+486661664508309639677855207744071453811467778304879481341110
+666266050352891273652933948059313105787893651237763997830011
+547785492112168780897026797639268848833042688905288690746385
+215316813681980036235520408549521110177444203360011773241511
+390408720107888502537066772719663637318756372817338664183248
+770259881087489368916167975603955530200421199253524838644330
+729349993218474286037668104255541369914251182744536873836498
+521401454849039347454886398114065115633302770320759089329350
+064966330662743762081179111598011007308180926640385473349453
+16927384000677045884729580985
+============================================================
+True
+
 \end{lstlisting}
 
-\section{Fluxo Geral do Código}
-
-\begin{enumerate}
-    \item Geração de dois números primos p e q.
-    \item Cálculo de n e de phi.
-    \item Definição da chave pública e cálculo da chave privada.
-    \item Codificação da mensagem em Base64, seguida do algoritmo OAEP.
-    \item Criptografia da mensagem com RSA.
-    \item Descriptografia da mensagem e reversão do processo de OAEP e Base64.
-    \item Geração e verificação de uma assinatura digital.
-    \item Teste de execução do programa.
-    \item Impressão dos resultados.
-\end{enumerate}
-
 \section{Conclusão}
-O código implementa um sistema robusto de criptografia e assinatura digital utilizando RSA. As funções desenvolvidas garantem a integridade e segurança dos dados manipulados, demonstrando o funcionamento prático da criptografia assimétrica combinada com técnicas adicionais de segurança.
+O trabalho de implementação do RSA somado ao OAEP e Base64 foi concluído com sucesso. O código foi testado e os resultados obtidos foram satisfatórios.
+E com isso acreditamos que melhoramos nosso entendimento sobre o funcionamento do algoritmo RSA e suas aplicações na criptografia moderna.
+
+\section{Referências}
+\begin{itemize}
+    \item \url{https://en.wikipedia.org/wiki/Mask_generation_function}
+    \item \url{https://www.youtube.com/watch?v=8i0UnX7Snkc&t=502s}
+    \item \url{https://www.youtube.com/watch?v=YwaQ4m1eHQo&t=499s}
+    \item \url{https://www.inf.pucrs.br/calazans/graduate/TPVLSI_I/RSA-oaep_spec.pdf}
+    \item Slides da disciplina de segurança Computacional UnB 
+\end{itemize}    
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{enc_oaep.png}
+    \caption{Diagrama do processo de encapsulamento OAEP}
+    \label{fig:enc_oaep}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{dec_oaep.png}
+    \caption{Diagrama do processo de decapsulamento OAEP}
+    \label{fig:dec_oaep}
+\end{figure}
 
 \end{document}
