@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2025.1.27)  1 FEB 2025 18:28
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2025.1.27)  1 FEB 2025 18:32
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -324,6 +324,7 @@ Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 48
 File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Live
 ))
 Package hyperref Info: Link coloring OFF on input line 46.
+ (./RSA.out) (./RSA.out)
 \@outlinefile=\write3
 \openout3 = `RSA.out'.
 
@@ -338,21 +339,7 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 LaTeX Font Info:    Trying to load font information for U+rsfs on input line 49.
  (/usr/share/texlive/texmf-dist/tex/latex/jknapltx/ursfs.fd
 File: ursfs.fd 1998/03/24 rsfs font definition file (jk)
-)
-
-/home/ericktaira/Documentos/RSA_OAEP/RSA.tex:56: LaTeX Error: There's no line here to end.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.56 
-     
-Your command was ignored.
-Type  I <command> <return>  to replace it with another command,
-or  <return>  to continue without it.
-
-[1
+) [1
 
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}{/usr/share/texmf/fonts/enc/dvips/cm-super/cm-super-t1.enc}]
 LaTeX Font Info:    Trying to load font information for T1+cmtt on input line 91.
@@ -378,7 +365,7 @@ Overfull \hbox (0.67184pt too wide) in paragraph at lines 657--658
 [][]$\T1/cmtt/m/n/10 https : / / www . inf . pucrs . br / calazans / graduate / TPVLSI _ I / RSA-[]oaep _
  []
 
-<enc_oaep.png, id=538, 627.34375pt x 631.35875pt>
+<enc_oaep.png, id=604, 627.34375pt x 631.35875pt>
 File: enc_oaep.png Graphic file (type png)
 <use enc_oaep.png>
 Package pdftex.def Info: enc_oaep.png  used on input line 663.
@@ -386,7 +373,7 @@ Package pdftex.def Info: enc_oaep.png  used on input line 663.
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
-<dec_oaep.png, id=540, 627.34375pt x 631.35875pt>
+<dec_oaep.png, id=606, 627.34375pt x 631.35875pt>
 File: dec_oaep.png Graphic file (type png)
 <use dec_oaep.png>
 Package pdftex.def Info: dec_oaep.png  used on input line 670.
@@ -399,32 +386,22 @@ LaTeX Warning: `h' float specifier changed to `ht'.
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
  ***********
-
-
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
-
-
-Package rerunfilecheck Warning: File `RSA.out' has changed.
-(rerunfilecheck)                Rerun to get outlines right
-(rerunfilecheck)                or use package `bookmark'.
-
-Package rerunfilecheck Info: Checksums for `RSA.out':
-(rerunfilecheck)             Before: <no file>
-(rerunfilecheck)             After:  D1DF9F223CEE025DEA7ABC6D0A8AAC08;3498.
+Package rerunfilecheck Info: File `RSA.out' has not changed.
+(rerunfilecheck)             Checksum: D1DF9F223CEE025DEA7ABC6D0A8AAC08;3498.
  ) 
 Here is how much of TeX's memory you used:
- 13668 strings out of 474222
- 203843 string characters out of 5748733
+ 13695 strings out of 474222
+ 204193 string characters out of 5748733
  2314975 words of memory out of 5000000
- 35287 multiletter control sequences out of 15000+600000
+ 35310 multiletter control sequences out of 15000+600000
  573596 words of font info for 81 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 75i,6n,79p,450b,2103s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 75i,6n,79p,453b,2103s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfbx1000.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfbx1200.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfbx1440.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm0500.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm1000.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm1200.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm1728.pfb></usr/share/texmf/fonts/type1/public/cm-super/sftt0800.pfb></usr/share/texmf/fonts/type1/public/cm-super/sftt1000.pfb></usr/share/texmf/fonts/type1/public/cm-super/sftt1200.pfb>
-Output written on RSA.pdf (17 pages, 592940 bytes).
+Output written on RSA.pdf (17 pages, 594587 bytes).
 PDF statistics:
- 735 PDF objects out of 1000 (max. 8388607)
- 672 compressed objects within 7 object streams
+ 800 PDF objects out of 1000 (max. 8388607)
+ 736 compressed objects within 8 object streams
  475 named destinations out of 1000 (max. 500000)
- 11 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 179 words of extra memory for PDF output out of 10000 (max. 10000000)
 

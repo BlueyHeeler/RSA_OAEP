@@ -157,45 +157,6 @@ def prime_numbers(): #descobre os numeros primos usando a funçao de Miller-Rabi
         n += 1
     return par_de_numeros_primos
 
-""""
-Descobrindo o pHash e a seed 
-
-
-seed = random.getrandbits(256).to_bytes(32, byteorder="big")
-seed = int.from_bytes(seed, byteorder='big')
-
-pHash = hashlib.sha3_256(seed.to_bytes(32, byteorder='big')).digest()
-pHash = int.from_bytes(pHash, byteorder='big')
-mensagem = 101
-
-print("DB:", bin(DB(pHash, mensagem)))
-print("Number of bits: ", number_of_bits(DB(pHash, mensagem)))
-
-maskeDB = DB(pHash, mensagem) ^ int.from_bytes(mgf1(seed, 1792, hashlib.sha3_256))
-
-maskedSeed = seed ^ int.from_bytes(mgf1(maskeDB, 32, hashlib.sha3_256))
-
-maskedSeed = shift_left(1792, maskedSeed)
-
-EM = maskedSeed | maskeDB
-
-#================================================================================================#
-bit_mask = pow(2, 257) - 1
-bit_mask = shift_left(1792, bit_mask)
-maskedSeed = EM & bit_mask
-maskedSeed = shift_right(1792, maskedSeed)
-
-bit_mask = pow(2, 1793) - 1
-maskeDB = EM & bit_mask
-
-seed = maskedSeed ^ int.from_bytes(mgf1(maskeDB, 32, hashlib.sha3_256), byteorder='big')
-db = maskeDB ^ int.from_bytes(mgf1(seed, 1792, hashlib.sha3_256), byteorder='big')
-
-print("DB: ", bin(db))
-print("Number of bits: ", number_of_bits(db))
-
-"""
-
 def enc_oaep(mensagem): #encriptaçao OAEP
     """
     Encapsulamento OAEP
@@ -222,17 +183,17 @@ def dec_oaep(c): #decriptaçao OAEP
     Returns:
         int: m
     """
-    bitMask = shift_left(1792, 1) - 1                                                           # mascara de bits
-    maskedDB = c & bitMask
-    maskedSeed = shift_right(1792, c)                                                                      # mascara de DB
-    seed = maskedSeed ^ int.from_bytes(mgf1(maskedDB, 32, hashlib.sha3_256), byteorder='big')   #
-    db = maskedDB ^ int.from_bytes(mgf1(seed, 1792, hashlib.sha3_256), byteorder='big')         #      
-    bitMask = shift_left(1536, 1) - 1                                                           #
-    m = db & bitMask                                                                            #
-    MSBit = msb(m) - 1                                                                          #
-    MSBit = shift_left(MSBit, 1)                                                                #
-    m = m ^ MSBit                                                                               #
-    return m                                                                                    #
+    bitMask = shift_left(1792, 1) - 1                                                           # bitmask
+    maskedDB = c & bitMask                                                                      # retirando o maskedDB do texto cifrado                                 
+    maskedSeed = shift_right(1792, c)                                                           # retirando o maskedSeed do texto cifrado
+    seed = maskedSeed ^ int.from_bytes(mgf1(maskedDB, 32, hashlib.sha3_256), byteorder='big')   # seed = maskedSeed XOR mgf1(maskedDB)
+    db = maskedDB ^ int.from_bytes(mgf1(seed, 1792, hashlib.sha3_256), byteorder='big')         # db = maskedDB XOR mgf1(seed)
+    bitMask = shift_left(1536, 1) - 1                                                           # bitmask
+    padding_with_message = db & bitMask                                                         # mensagem = db AND bitmask
+    MSBit = msb(padding_with_message) - 1                                                       # bit mais significativo
+    MSBit = shift_left(MSBit, 1)                                                                # desloca o MSB para a esquerda
+    m = padding_with_message ^ MSBit                                                                               # m XOR MSBit
+    return m                                                                                    
     
 def multiplicative_inverse(a, b): # calcula o inverso multiplicativo usando o Algoritmo extendido de Euclides
     """
@@ -324,6 +285,16 @@ def dec_rsa(p, q, e, c): #decriptaçao RSA
     return m
 
 def assinatura_com_rsa(message, key, n): #assinatura com RSA
+    """
+    RSA Signature
+    Args:
+        message: mensagem
+        key: chave privada
+        n: produto dos primos
+    Returns:
+        int: mensagem
+        int: hash encriptado
+    """
     message = base64_encode(message)
     message = int.from_bytes(message, byteorder='big')
     hash_message = hashlib.sha3_256(message.to_bytes(32, byteorder='big')).digest()
@@ -332,6 +303,16 @@ def assinatura_com_rsa(message, key, n): #assinatura com RSA
     return message, encrypted_hash
 
 def verificar_assinatura_com_rsa(message, enc_hash, e, n):
+    """
+    RSA Signature Verification
+    Args:
+        message: mensagem
+        enc_hash: hash encriptado
+        e: chave publica e
+        n: produto dos primos
+    Returns:
+        bool: True se a assinatura é valida, False se nao é valida
+    """
     decrypted_hash = enc_rsa(n, e, enc_hash)
     hash_message = hashlib.sha3_256(message.to_bytes(32, byteorder='big')).digest()
     hash_message = int.from_bytes(hash_message, byteorder='big')
